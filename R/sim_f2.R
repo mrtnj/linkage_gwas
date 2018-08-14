@@ -68,7 +68,7 @@ for (i in 1:20) {
                         genotypes = c(1, 2, 3, 4, 5))
     
     scan <- scanone(cross, pheno.col = 2)
-    perm <- scanone(cross, pheno.col = 2, n.perm = 500, n.cluster = 7)
+    perm <- scanone(cross, pheno.col = 2, n.perm = 500)
     threshold <- summary(perm)[1,1]
     hits <- summary(scan, threshold = threshold)
     hit_intervals <- lapply(hits$chr, lodint, results = scan, drop = 1.8, expandtomarkers = TRUE)
@@ -87,14 +87,14 @@ for (i in 1:20) {
                         trait = f2@pheno[,1],
                         stringsAsFactors = FALSE)
     
-    geno <- data.frame(marker_name = colnames(snps_sparse),
-                       map_sparse[, c("chr", "cM")],
-                       t(snps_sparse - 1),
+    geno <- data.frame(marker_name = colnames(snps_dense),
+                       map_dense[, c("chr", "cM")],
+                       t(snps_dense - 1),
                        stringsAsFactors = FALSE)
     colnames(geno)[4:ncol(geno)] <- pheno$gid
     
     
-    gwas <- GWAS(pheno, geno, P3D = TRUE, n.core = 7)
+    gwas <- GWAS(pheno, geno, P3D = TRUE)
     gwas$p <- 10^-gwas$trait
     gwas$p_fdr <- p.adjust(gwas$p, "fdr")
     
@@ -103,8 +103,8 @@ for (i in 1:20) {
     
     gwas_check <- check_gwas_results(gwas_hits,
                                      qtl_locations,
-                                     snps_sparse,
-                                     map_sparse)
+                                     snps_dense,
+                                     map_dense)
     qtl_locations <- gwas_check$qtl_locations
     false_positives_gwas <- gwas_check$false_positives_gwas
     ld_markers <- gwas_check$ld_markers

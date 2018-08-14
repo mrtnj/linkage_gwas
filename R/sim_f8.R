@@ -29,8 +29,8 @@ for (i in 1:10) {
     population <- mapping_population$founder_population
     f8 <- mapping_population$mapping_population
     
-    snps_dense <- pullSnpGeno(f8, 1)
-    snps_sparse <- pullSnpGeno(f8, 2)
+    snps_dense <- pullSnpGeno(f8, 1, simParam = SIMPARAM)
+    snps_sparse <- pullSnpGeno(f8, 2, simParam = SIMPARAM)
     
     map_dense <- pull_snp_map(SIMPARAM, 1)
     map_dense$cM <- map_dense$loc * 100
@@ -52,7 +52,7 @@ for (i in 1:10) {
     
     ## R/qtl
     
-    parental_snps_sparse <- pullSnpGeno(population, 2)
+    parental_snps_sparse <- pullSnpGeno(population, 2, simParam = SIMPARAM)
     
     recoded_sparse <- recode_genotypes(snps_sparse, parental_snps_sparse)
     map_sparse_informative <- subset(map_sparse, marker_name %in% colnames(recoded_sparse))
@@ -82,7 +82,7 @@ for (i in 1:10) {
     pca <- prcomp(snps_sparse)
     
     scan <- scanone(cross, pheno.col = 2, addcovar = pca$x[, 1:10])
-    perm <- scanone(cross, pheno.col = 2, n.perm = 500, n.cluster = 7, addcovar = pca$x[, 1:10])
+    perm <- scanone(cross, pheno.col = 2, n.perm = 500, addcovar = pca$x[, 1:10])
     threshold <- summary(perm)[1,1]
     hits <- summary(scan, threshold = threshold)
     hit_intervals <- lapply(hits$chr, lodint, results = scan, drop = 1.8, expandtomarkers = TRUE)
@@ -103,14 +103,14 @@ for (i in 1:10) {
                         trait = f8@pheno[,1],
                         stringsAsFactors = FALSE)
     
-    geno <- data.frame(marker_name = colnames(snps_sparse),
-                       map_sparse[, c("chr", "cM")],
-                       t(snps_sparse - 1),
+    geno <- data.frame(marker_name = colnames(snps_dense),
+                       map_dense[, c("chr", "cM")],
+                       t(snps_dense - 1),
                        stringsAsFactors = FALSE)
     colnames(geno)[4:ncol(geno)] <- pheno$gid
     
     
-    gwas <- GWAS(pheno, geno, P3D = TRUE, n.core = 7,
+    gwas <- GWAS(pheno, geno, P3D = TRUE,
                  fixed = colnames(pcs))
     gwas$p <- 10^-gwas$trait
     gwas$p_fdr <- p.adjust(gwas$p, "fdr")
@@ -120,8 +120,8 @@ for (i in 1:10) {
     
     gwas_check <- check_gwas_results(gwas_hits,
                                      qtl_locations,
-                                     snps_sparse,
-                                     map_sparse)
+                                     snps_dense,
+                                     map_dense)
     qtl_locations <- gwas_check$qtl_locations
     false_positives_gwas <- gwas_check$false_positives_gwas
     ld_markers <- gwas_check$ld_markers
