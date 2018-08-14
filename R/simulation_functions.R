@@ -29,7 +29,7 @@ setup_population <- function(scenario) {
     SIMPARAM <- SimParam$new(founderpop)
     SIMPARAM$setGender("yes_sys")
     SIMPARAM$restrSegSites(maxQtl = 1000,
-                           maxSnps = 1000,
+                           maxSnp = 1000,
                            snpQtlOverlap = FALSE)
     SIMPARAM$addTraitA(nQtlPerChr = 1,
                        mean = 100,
