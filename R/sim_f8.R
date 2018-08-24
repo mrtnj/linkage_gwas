@@ -110,8 +110,7 @@ for (i in 1:10) {
     colnames(geno)[4:ncol(geno)] <- pheno$gid
     
     
-    gwas <- GWAS(pheno, geno, P3D = TRUE,
-                 fixed = colnames(pcs))
+    gwas <- GWAS(pheno, geno, P3D = TRUE)
     gwas$p <- 10^-gwas$trait
     gwas$p_fdr <- p.adjust(gwas$p, "fdr")
     
