@@ -309,17 +309,27 @@ check_linkage_results <- function(hit_intervals,
     qtl_locations <- pull_qtl_map(SIMPARAM)
     qtl_locations$cM <- qtl_locations$loc * 100
     qtl_locations$detected_linkage <- FALSE
+    qtl_locations$interval_length_linkage <- NA
+    qtl_locations$distance_to_hit_linkage <- NA
     false_positives_linkage <- 0
 
     if (length(hit_intervals) > 0) {
         for (hit_ix in 1:length(hit_intervals)) {
-            chr <- unique(as.numeric(as.character(hit_intervals[[hit_ix]]$chr)))
-            detected <- qtl_locations$chr == chr &
+            this_chr <- unique(as.numeric(as.character(hit_intervals[[hit_ix]]$chr)))
+            detected <- qtl_locations$chr == this_chr &
                 qtl_locations$cM >= hit_intervals[[hit_ix]]$pos[1] &
                 qtl_locations$cM <= hit_intervals[[hit_ix]]$pos[3]
             qtl_locations$detected_linkage[which(detected)] <-  TRUE
+            qtl_locations$interval_length_linkage[which(detected)] <-
+                hit_intervals[[hit_ix]]$pos[3] - hit_intervals[[hit_ix]]$pos[1]
             if (all(detected == FALSE)) {
                 false_positives_linkage <- false_positives_linkage + 1
+
+                true_location <- subset(qtl_locations, chr == this_chr)$cM
+                distance <- min(abs(hit_intervals[[hit_ix]]$pos[1] - true_location),
+                                abs(hit_intervals[[hit_ix]]$pos[3] - true_location))
+                qtl_locations$distance_to_hit_linkage[which(qtl_locations$chr == this_chr)] <-
+                    distance
             }
         }
     }
@@ -335,6 +345,8 @@ check_gwas_results <- function(gwas_hits,
                                snps,
                                map) {
     qtl_locations$detected_gwas <- FALSE
+    qtl_locations$interval_length_gwas <- NA
+    qtl_locations$distance_to_hit_gwas <- NA
     ld_markers <- vector(mode = "list", length = nrow(gwas_hits))
     false_positives_gwas <- 0
     
@@ -354,6 +366,16 @@ check_gwas_results <- function(gwas_hits,
                 qtl_locations$cM >= min(ld_markers[[hit_ix]]$cM) &
                 qtl_locations$cM <= max(ld_markers[[hit_ix]]$cM)
             qtl_locations$detected_gwas[which(detected)] <-  TRUE
+            if (any(detected)) {
+                if (is.na(qtl_locations$interval_length_gwas[which(detected)])) {
+                    qtl_locations$interval_length_gwas[which(detected)] <-
+                        max(ld_markers[[hit_ix]]$cM) - min(ld_markers[[hit_ix]]$cM)
+                } else {
+                    qtl_locations$interval_length_gwas[which(detected)] <-
+                        max(qtl_locations$interval_length_gwas[which(detected)],
+                            max(ld_markers[[hit_ix]]$cM) - min(ld_markers[[hit_ix]]$cM))
+                }
+            }
             if (all(detected == FALSE)) {
                 ##                false_positives_gwas <- false_positives_gwas + 1
                 false_positives_list[[false_positive_counter]] <-
